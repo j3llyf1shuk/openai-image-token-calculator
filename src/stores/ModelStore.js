@@ -24,6 +24,48 @@ export const modelStore = (set, get) => ({
       ],
     },
     {
+      name: "GPT-5-mini",
+      items: [
+        {
+          name: "GPT-5-mini (Global)",
+          calculationType: "patch",
+          patchSize: 32,
+          maxPatches: 1536,
+          multiplier: 1.62,
+          costPerMillionTokens: 0.3,
+        },
+        {
+          name: "GPT-5-mini (Data Zone)",
+          calculationType: "patch",
+          patchSize: 32,
+          maxPatches: 1536,
+          multiplier: 1.62,
+          costPerMillionTokens: 0.33,
+        },
+      ],
+    },
+    {
+      name: "GPT-5-nano",
+      items: [
+        {
+          name: "GPT-5-nano (Global)",
+          calculationType: "patch",
+          patchSize: 32,
+          maxPatches: 1536,
+          multiplier: 2.46,
+          costPerMillionTokens: 0.15,
+        },
+        {
+          name: "GPT-5-nano (Data Zone)",
+          calculationType: "patch",
+          patchSize: 32,
+          maxPatches: 1536,
+          multiplier: 2.46,
+          costPerMillionTokens: 0.165,
+        },
+      ],
+    },
+    {
       name: "GPT-4.1",
       items: [
         {
@@ -43,6 +85,48 @@ export const modelStore = (set, get) => ({
           tileSizeLength: 512,
           baseTokens: 85,
           costPerMillionTokens: 2.2,
+        },
+      ],
+    },
+    {
+      name: "GPT-4.1-mini",
+      items: [
+        {
+          name: "GPT-4.1-mini (Global)",
+          calculationType: "patch",
+          patchSize: 32,
+          maxPatches: 1536,
+          multiplier: 1.62,
+          costPerMillionTokens: 0.4,
+        },
+        {
+          name: "GPT-4.1-mini (Data Zone)",
+          calculationType: "patch",
+          patchSize: 32,
+          maxPatches: 1536,
+          multiplier: 1.62,
+          costPerMillionTokens: 0.44,
+        },
+      ],
+    },
+    {
+      name: "GPT-4.1-nano",
+      items: [
+        {
+          name: "GPT-4.1-nano (Global)",
+          calculationType: "patch",
+          patchSize: 32,
+          maxPatches: 1536,
+          multiplier: 2.46,
+          costPerMillionTokens: 0.2,
+        },
+        {
+          name: "GPT-4.1-nano (Data Zone)",
+          calculationType: "patch",
+          patchSize: 32,
+          maxPatches: 1536,
+          multiplier: 2.46,
+          costPerMillionTokens: 0.22,
         },
       ],
     },
@@ -84,6 +168,14 @@ export const modelStore = (set, get) => ({
           tileSizeLength: 512,
           baseTokens: 75,
           costPerMillionTokens: 16.5,
+        },
+        {
+          name: "o4-mini",
+          calculationType: "patch",
+          patchSize: 32,
+          maxPatches: 1536,
+          multiplier: 1.72,
+          costPerMillionTokens: 0.5,
         },
       ],
     },

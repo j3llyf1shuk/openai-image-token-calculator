@@ -24,32 +24,58 @@ export default function CalculationExplanation() {
       </AccordionSummary>
       <AccordionDetails>
         {model ? (
-          <Stack spacing={1.25} component="ol" sx={{ pl: 2 }}>
-            <Typography component="li">
-              <b>Resizing Images</b>: Ensure each image is resized to fit within
-              the maximum dimension {model.maxImageDimension}px and has at least{" "}
-              {model.imageMinSizeLength}px on its shortest side while
-              maintaining its aspect ratio.
-            </Typography>
-            <Typography component="li">
-              <b>Calculating Tiles</b>: The resized image is divided into tiles
-              based on the model's tile size of {model.tileSizeLength}px ×{" "}
-              {model.tileSizeLength}px.
-            </Typography>
-            <Typography component="li">
-              <b>Token Calculation</b>: Total tokens = (tiles ×
-              {model.tokensPerTile}) + {model.baseTokens} base tokens.
-            </Typography>
-            <Typography component="li">
-              <b>Price Calculation</b>: Total price = total tokens × price per
-              1M tokens (${model.costPerMillionTokens}).
-            </Typography>
-            {model.comment && (
+          model.calculationType === "patch" ? (
+            <Stack spacing={1.25} component="ol" sx={{ pl: 2 }}>
               <Typography component="li">
-                <b>IMPORTANT:</b> {model.comment}
+                <b>Calculate Patches</b>: The image is divided into {model.patchSize}px × {model.patchSize}px patches.
+                Patches wide = ⌈width/{model.patchSize}⌉, Patches high = ⌈height/{model.patchSize}⌉
               </Typography>
-            )}
-          </Stack>
+              <Typography component="li">
+                <b>Scale if Needed</b>: If total patches exceed {model.maxPatches}, the image is scaled down
+                proportionally so it requires no more than {model.maxPatches} patches.
+              </Typography>
+              <Typography component="li">
+                <b>Token Calculation</b>: Image tokens = patches × {model.multiplier} (multiplier).
+                The total is capped at {model.maxPatches} patches before applying the multiplier.
+              </Typography>
+              <Typography component="li">
+                <b>Price Calculation</b>: Total price = total tokens × price per
+                1M tokens (${model.costPerMillionTokens}).
+              </Typography>
+              {model.comment && (
+                <Typography component="li">
+                  <b>IMPORTANT:</b> {model.comment}
+                </Typography>
+              )}
+            </Stack>
+          ) : (
+            <Stack spacing={1.25} component="ol" sx={{ pl: 2 }}>
+              <Typography component="li">
+                <b>Resizing Images</b>: Ensure each image is resized to fit within
+                the maximum dimension {model.maxImageDimension}px and has at least{" "}
+                {model.imageMinSizeLength}px on its shortest side while
+                maintaining its aspect ratio.
+              </Typography>
+              <Typography component="li">
+                <b>Calculating Tiles</b>: The resized image is divided into tiles
+                based on the model's tile size of {model.tileSizeLength}px ×{" "}
+                {model.tileSizeLength}px.
+              </Typography>
+              <Typography component="li">
+                <b>Token Calculation</b>: Total tokens = (tiles ×
+                {model.tokensPerTile}) + {model.baseTokens} base tokens.
+              </Typography>
+              <Typography component="li">
+                <b>Price Calculation</b>: Total price = total tokens × price per
+                1M tokens (${model.costPerMillionTokens}).
+              </Typography>
+              {model.comment && (
+                <Typography component="li">
+                  <b>IMPORTANT:</b> {model.comment}
+                </Typography>
+              )}
+            </Stack>
+          )
         ) : (
           <Typography>Pick a model to see the calculation details.</Typography>
         )}

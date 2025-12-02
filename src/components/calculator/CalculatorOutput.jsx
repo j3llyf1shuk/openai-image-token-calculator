@@ -41,24 +41,50 @@ export default function CalculatorOutput() {
         <Table size="small" aria-label="summary table">
           <TableHead>
             <TableRow>
-              <TableCell>Base tokens</TableCell>
-              <TableCell>Tile tokens</TableCell>
-              <TableCell>Total tokens</TableCell>
-              <TableCell>Total price</TableCell>
+              {model?.calculationType === "patch" ? (
+                <>
+                  <TableCell>Total patches</TableCell>
+                  <TableCell>Multiplier</TableCell>
+                  <TableCell>Total tokens</TableCell>
+                  <TableCell>Total price</TableCell>
+                </>
+              ) : (
+                <>
+                  <TableCell>Base tokens</TableCell>
+                  <TableCell>Tile tokens</TableCell>
+                  <TableCell>Total tokens</TableCell>
+                  <TableCell>Total price</TableCell>
+                </>
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
             <TableRow>
-              <TableCell>{model?.baseTokens}</TableCell>
-              <TableCell>
-                {model.tokensPerTile} ×{" "}
-                {images
-                  .map((image) => image.totalTiles ?? 0)
-                  .reduce((acc, val) => acc + val, 0)}{" "}
-                = {totalTokens - (model?.baseTokens || 0)}
-              </TableCell>
-              <TableCell>{totalTokens}</TableCell>
-              <TableCell>{currency}</TableCell>
+              {model?.calculationType === "patch" ? (
+                <>
+                  <TableCell>
+                    {images
+                      .map((image) => image.totalTiles ?? 0)
+                      .reduce((acc, val) => acc + val, 0)}
+                  </TableCell>
+                  <TableCell>{model.multiplier}</TableCell>
+                  <TableCell>{totalTokens}</TableCell>
+                  <TableCell>{currency}</TableCell>
+                </>
+              ) : (
+                <>
+                  <TableCell>{model?.baseTokens}</TableCell>
+                  <TableCell>
+                    {model.tokensPerTile} ×{" "}
+                    {images
+                      .map((image) => image.totalTiles ?? 0)
+                      .reduce((acc, val) => acc + val, 0)}{" "}
+                    = {totalTokens - (model?.baseTokens || 0)}
+                  </TableCell>
+                  <TableCell>{totalTokens}</TableCell>
+                  <TableCell>{currency}</TableCell>
+                </>
+              )}
             </TableRow>
           </TableBody>
         </Table>
@@ -74,9 +100,20 @@ export default function CalculatorOutput() {
               <Table size="small" aria-label={`image ${i + 1} breakdown`}>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Resized Size</TableCell>
-                    <TableCell>Tiles (per image)</TableCell>
-                    <TableCell>Total tiles</TableCell>
+                    {model?.calculationType === "patch" ? (
+                      <>
+                        <TableCell>Size</TableCell>
+                        <TableCell>Patches (per image)</TableCell>
+                        <TableCell>Tokens (per image)</TableCell>
+                        <TableCell>Total tokens</TableCell>
+                      </>
+                    ) : (
+                      <>
+                        <TableCell>Resized Size</TableCell>
+                        <TableCell>Tiles (per image)</TableCell>
+                        <TableCell>Total tiles</TableCell>
+                      </>
+                    )}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -87,7 +124,16 @@ export default function CalculatorOutput() {
                     <TableCell>
                       {img.tilesHigh} × {img.tilesWide}
                     </TableCell>
-                    <TableCell>{img.totalTiles}</TableCell>
+                    {model?.calculationType === "patch" ? (
+                      <>
+                        <TableCell>
+                          {Math.ceil((img.tilesHigh * img.tilesWide) * model.multiplier)}
+                        </TableCell>
+                        <TableCell>{img.tokens || 0}</TableCell>
+                      </>
+                    ) : (
+                      <TableCell>{img.totalTiles}</TableCell>
+                    )}
                   </TableRow>
                 </TableBody>
               </Table>

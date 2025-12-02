@@ -21,6 +21,7 @@ export const calcStore = (set, get) => ({
     set(() => ({ totalTokens: null, totalCost: null }));
   },
   runCalculation: () => {
+    // Tile-based calculation (GPT-4o, GPT-4.1, GPT-5, o1, o3, etc.)
     function getResizedImageSize(maxDimension, minSide, height, width) {
       let resizedHeight = height;
       let resizedWidth = width;
@@ -54,53 +55,133 @@ export const calcStore = (set, get) => ({
       return { tilesHigh, tilesWide };
     }
 
+    // Patch-based calculation (GPT-5-mini, GPT-5-nano, GPT-4.1-mini, GPT-4.1-nano, o4-mini)
+    function calculatePatchTokens(width, height, patchSize, maxPatches, multiplier) {
+      // Step A: Calculate raw patches needed
+      const patchesWide = Math.ceil(width / patchSize);
+      const patchesHigh = Math.ceil(height / patchSize);
+      const rawPatches = patchesWide * patchesHigh;
+
+      let finalWidth = width;
+      let finalHeight = height;
+      let finalPatchesWide = patchesWide;
+      let finalPatchesHigh = patchesHigh;
+
+      // Step B: If patches exceed maxPatches, scale down
+      if (rawPatches > maxPatches) {
+        // Calculate shrink factor
+        let r = Math.sqrt((patchSize * patchSize * maxPatches) / (width * height));
+        
+        // Adjust r to ensure whole number of patches
+        const widthFactor = Math.floor(width * r / patchSize) / (width * r / patchSize);
+        const heightFactor = Math.floor(height * r / patchSize) / (height * r / patchSize);
+        r = r * Math.min(widthFactor, heightFactor);
+
+        finalWidth = Math.floor(width * r);
+        finalHeight = Math.floor(height * r);
+      }
+
+      // Step C: Calculate final patch count (capped at maxPatches)
+      finalPatchesWide = Math.ceil(finalWidth / patchSize);
+      finalPatchesHigh = Math.ceil(finalHeight / patchSize);
+      const imageTokens = Math.min(finalPatchesWide * finalPatchesHigh, maxPatches);
+
+      // Step D: Apply multiplier
+      const totalTokens = Math.ceil(imageTokens * multiplier);
+
+      return {
+        patchesWide: finalPatchesWide,
+        patchesHigh: finalPatchesHigh,
+        resizedWidth: finalWidth,
+        resizedHeight: finalHeight,
+        tokens: totalTokens,
+        basePatches: imageTokens,
+      };
+    }
+
     const { model, images } = get();
-    const tokensPerTile = model.tokensPerTile;
-    const maxImageDimension = model.maxImageDimension;
-    const imageMinSizeLength = model.imageMinSizeLength;
-    const tileSizeLength = model.tileSizeLength;
-    const baseTokens = model.baseTokens;
     const costPerMillionTokens = model.costPerMillionTokens;
 
-    const imageTileCount = images.flatMap((image) => {
-      const imgSize = getResizedImageSize(
-        maxImageDimension,
-        imageMinSizeLength,
-        image.height,
-        image.width
-      );
+    // Check if this is a patch-based model
+    if (model.calculationType === "patch") {
+      const patchSize = model.patchSize;
+      const maxPatches = model.maxPatches;
+      const multiplier = model.multiplier;
 
-      image.resizedHeight = imgSize.height;
-      image.resizedWidth = imgSize.width;
+      const imageResults = images.map((image) => {
+        const result = calculatePatchTokens(
+          image.width,
+          image.height,
+          patchSize,
+          maxPatches,
+          multiplier
+        );
 
-      const imageTiles = getImageTileCount(
-        tileSizeLength,
-        imgSize.height,
-        imgSize.width
-      );
+        image.resizedWidth = result.resizedWidth;
+        image.resizedHeight = result.resizedHeight;
+        image.tilesWide = result.patchesWide;
+        image.tilesHigh = result.patchesHigh;
+        image.totalTiles = result.basePatches * image.multiplier;
+        image.tokens = result.tokens * image.multiplier;
 
-      image.tilesHigh = imageTiles.tilesHigh;
-      image.tilesWide = imageTiles.tilesWide;
+        return result.tokens * image.multiplier;
+      });
 
-      const multiplier = image.multiplier;
+      set(() => ({ images: images }));
 
-      image.totalTiles =
-        imageTiles.tilesHigh * imageTiles.tilesWide * multiplier;
+      const totalTokens = imageResults.reduce((acc, tokens) => acc + tokens, 0);
+      set(() => ({ totalTokens: totalTokens }));
 
-      return Array.from({ length: multiplier }, () => imageTiles);
-    });
+      const totalCost = (totalTokens / 1000000) * costPerMillionTokens;
+      set(() => ({ totalCost: totalCost.toFixed(5) }));
+    } else {
+      // Tile-based calculation (original logic)
+      const tokensPerTile = model.tokensPerTile;
+      const maxImageDimension = model.maxImageDimension;
+      const imageMinSizeLength = model.imageMinSizeLength;
+      const tileSizeLength = model.tileSizeLength;
+      const baseTokens = model.baseTokens;
 
-    set(() => ({ images: images }));
+      const imageTileCount = images.flatMap((image) => {
+        const imgSize = getResizedImageSize(
+          maxImageDimension,
+          imageMinSizeLength,
+          image.height,
+          image.width
+        );
 
-    const totalTokens =
-      imageTileCount.reduce(
-        (acc, tiles) => acc + tiles.tilesHigh * tiles.tilesWide * tokensPerTile,
-        0
-      ) + baseTokens;
+        image.resizedHeight = imgSize.height;
+        image.resizedWidth = imgSize.width;
 
-    set(() => ({ totalTokens: totalTokens }));
+        const imageTiles = getImageTileCount(
+          tileSizeLength,
+          imgSize.height,
+          imgSize.width
+        );
 
-    const totalCost = (totalTokens / 1000000) * costPerMillionTokens;
-    set(() => ({ totalCost: totalCost.toFixed(5) }));
+        image.tilesHigh = imageTiles.tilesHigh;
+        image.tilesWide = imageTiles.tilesWide;
+
+        const multiplier = image.multiplier;
+
+        image.totalTiles =
+          imageTiles.tilesHigh * imageTiles.tilesWide * multiplier;
+
+        return Array.from({ length: multiplier }, () => imageTiles);
+      });
+
+      set(() => ({ images: images }));
+
+      const totalTokens =
+        imageTileCount.reduce(
+          (acc, tiles) => acc + tiles.tilesHigh * tiles.tilesWide * tokensPerTile,
+          0
+        ) + baseTokens;
+
+      set(() => ({ totalTokens: totalTokens }));
+
+      const totalCost = (totalTokens / 1000000) * costPerMillionTokens;
+      set(() => ({ totalCost: totalCost.toFixed(5) }));
+    }
   },
 });
